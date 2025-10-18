@@ -1,0 +1,13 @@
+services:
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medcore-auth
+    image: medcore-auth
+    environment:
+      - PORT=3000
+    ports:
+      - '3001:3000'
+    env_file:
+      - .env
