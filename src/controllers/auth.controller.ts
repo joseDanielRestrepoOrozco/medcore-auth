@@ -294,25 +294,14 @@ const resendVerificationCode = async (
   }
 };
 
-/**
- * Endpoint para validar JWT y obtener datos reales del usuario desde BD
- * Este endpoint es usado por otros microservicios para verificar autenticación
- * y verificar permisos basados en roles
- *
- * Query params opcionales:
- * - requiredRole: rol requerido para acceder (MEDICO, ENFERMERA, PACIENTE, ADMINISTRADOR)
- * - allowedRoles: lista de roles permitidos separados por coma (ej: MEDICO,ADMINISTRADOR)
- */
 const verifyToken = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Asumimos que tokenExtractor middleware ya validó el token
-    // y puso los datos en req.tokenPayload
     if (!req.tokenPayload) {
-      res.status(401).json({ error: 'No token payload found' });
+      res.status(401).json({ valid: false, error: 'No token payload found' });
       return;
     }
 
@@ -323,9 +312,13 @@ const verifyToken = async (
       where: { id: userId },
       select: {
         id: true,
+        email: true,
         fullname: true,
         role: true,
         status: true,
+        specialization: true,
+        department: true,
+        license_number: true,
       },
     });
 
@@ -348,7 +341,6 @@ const verifyToken = async (
       typeof allowedRoles !== 'string'
     ) {
       res.status(403).json({
-        valid: false,
         error: 'Permisos insuficientes',
       });
       return;
@@ -357,20 +349,13 @@ const verifyToken = async (
     const rolesArray = allowedRoles.split(',').map(r => r.trim());
     if (!rolesArray.includes(user.role)) {
       res.status(403).json({
-        valid: false,
         error: 'Permisos insuficientes',
       });
       return;
     }
 
     res.status(200).json({
-      valid: true,
-      user: {
-        id: user.id,
-        fullname: user.fullname,
-        role: user.role,
-        status: user.status,
-      },
+      user,
     });
   } catch (error: unknown) {
     next(error);
