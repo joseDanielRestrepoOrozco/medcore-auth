@@ -1,10 +1,13 @@
 import express from 'express';
+import dns from 'dns';
 import { sendVerificationEmail } from './libs/mailer.js';
 import { FRONTEND_ORIGIN, JWT_EXPIRES_IN, JWT_SECRET, PATIENTS_SERVICE_URL } from './libs/config.js';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+// Forzar IPv4 primero para conexiones Atlas (evita problemas SRV/IPv6)
+dns.setDefaultResultOrder('ipv4first');
 const app = express();
 
 app.use(express.json());
@@ -65,13 +68,17 @@ const maskDbUrl = (raw: string): string => {
   }
 };
 
-// DB ping on startup (incluye URL destino safe)
+// DB ping opcional (actívalo exportando DB_PING=true)
 (async () => {
+  const shouldPing = String(process.env.DB_PING || 'false').toLowerCase() === 'true';
+  if (!shouldPing) return;
   try {
-    await (prisma as any).$runCommandRaw({ ping: 1 });
-    console.log('[AUTH] DB ping ok ->', maskDbUrl(process.env.DATABASE_URL || ''));
+    if (typeof (prisma as unknown as { $runCommandRaw?: (cmd: unknown) => Promise<unknown> }).$runCommandRaw === 'function') {
+      await (prisma as unknown as { $runCommandRaw: (cmd: unknown) => Promise<unknown> }).$runCommandRaw({ ping: 1 });
+      console.log('[AUTH] DB ping ok ->', maskDbUrl(process.env.DATABASE_URL || ''));
+    }
   } catch (e) {
-    console.error('[AUTH] DB ping failed', e);
+    console.warn('[AUTH] DB ping skipped/failed', (e as Error)?.message);
   }
 })();
 
