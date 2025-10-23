@@ -11,3 +11,4 @@ services:
       - '3001:3000'
     env_file:
       - .env
+      - .env.prod
