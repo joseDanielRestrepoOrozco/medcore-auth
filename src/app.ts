@@ -14,86 +14,8 @@ app.get('/', (_req, res) => {
   res.send('Auth Service is running');
 });
 
-// Stubs de autenticación bajo /api/v1/auth (solo si USE_STUBS=true)
-if (process.env.USE_STUBS === 'true') {
-  app.post('/api/v1/auth/log-in', (req, res) => {
-    const { email } = req.body || {};
-    const user = {
-      id: 'u_demo',
-      email: email || 'demo@example.com',
-      fullname: 'Usuario Demo',
-      status: 'VERIFIED',
-      role: 'ADMINISTRADOR',
-    };
-    res.json({ message: 'Inicio de sesión exitoso', user, token: 'demo-token' });
-  });
-
-  app.post('/api/v1/auth/sign-up', async (req, res) => {
-    const { email, fullname } = req.body || {};
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    let previewUrl: string | undefined;
-    const verifyUrl = email ? `${FRONTEND_ORIGIN || 'http://localhost:5173'}/verify?email=${encodeURIComponent(email)}&code=${verificationCode}` : undefined;
-    try {
-      if (email) {
-        const r = await sendVerificationEmail(email, verificationCode, verifyUrl);
-        // Log para desarrollo
-        if (r.previewUrl) {
-          previewUrl = r.previewUrl;
-          console.log('[AUTH] Preview email URL:', r.previewUrl);
-        }
-      }
-    } catch (e) {
-      console.error('[AUTH] Error enviando correo:', e);
-    }
-    res.json({
-      id: 'u_new',
-      email: email || 'nuevo@example.com',
-      fullname: fullname || 'Nuevo Usuario',
-      status: 'PENDING',
-      message: 'Registro exitoso, verifica tu correo',
-      devPreviewUrl: previewUrl,
-      devVerificationCode: verificationCode,
-    });
-  });
-
-  app.post('/api/v1/auth/verify-email', (_req, res) => {
-    const user = {
-      id: 'u_demo',
-      email: 'demo@example.com',
-      fullname: 'Usuario Demo',
-      status: 'VERIFIED',
-      role: 'ADMINISTRADOR',
-    };
-    res.json({ message: 'Cuenta verificada', user });
-  });
-
-  app.post('/api/v1/auth/resend-verification-code', async (req, res) => {
-    const { email } = req.body || {};
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    let previewUrl: string | undefined;
-    const verifyUrl = email ? `${FRONTEND_ORIGIN || 'http://localhost:5173'}/verify?email=${encodeURIComponent(email)}&code=${verificationCode}` : undefined;
-    try {
-      if (email) {
-        const r = await sendVerificationEmail(email, verificationCode, verifyUrl);
-        if (r.previewUrl) {
-          previewUrl = r.previewUrl;
-          console.log('[AUTH] Preview email URL:', r.previewUrl);
-        }
-      }
-    } catch (e) {
-      console.error('[AUTH] Error reenviando correo:', e);
-    }
-    res.json({ message: 'Código reenviado', devPreviewUrl: previewUrl, devVerificationCode: verificationCode });
-  });
-
-  app.post('/api/v1/auth/forgot-password', (_req, res) => {
-    res.json({ message: 'Si el correo existe, se enviará un enlace' });
-  });
-}
-
-// Endpoints reales (DB) cuando USE_STUBS != 'true'
-if (process.env.USE_STUBS !== 'true') {
-  const prisma = new PrismaClient();
+// Endpoints reales (DB)
+const prisma = new PrismaClient();
 
   // Registro
   app.post('/api/v1/auth/sign-up', async (req, res) => {
@@ -203,8 +125,6 @@ if (process.env.USE_STUBS !== 'true') {
       return res.status(500).json({ error: 'Internal server error' });
     }
   });
-}
-
 app.post('/api/v1/auth/forgot-password', (_req, res) => {
   res.json({ message: 'Si el correo existe, se enviará un enlace' });
 });
