@@ -1,27 +1,153 @@
-import type { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
-import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
-import { JWT_SECRET, JWT_EXPIRES_IN } from '../libs/config.js';
+import { type NextFunction, type Request, type Response } from 'express';
+import {
+  userSchema,
+  loginSchema,
+  verifyEmailSchema,
+  resendVerificationCodeSchema,
+  validateAge,
+} from '../schemas/Auth.js';
+import authService from '../services/auth.service.js';
+import calculateAge from '../utils/calcAge.js';
 
-const prisma = new PrismaClient();
-
-export const login = async (req: Request, res: Response, next: NextFunction) => {
+const signup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    const { email, password } = req.body as { email?: string; password?: string };
-    if (!email || !password) return res.status(400).json({ error: 'Email y password requeridos' });
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: 'Credenciales inválidas' });
+    const bodyWhitRole = { role: req.body.role || 'PACIENTE', ...req.body };
+    const newUser = userSchema.parse(bodyWhitRole);
+    console.log('[signup] request', {
+      email: newUser.email,
+      fullname: newUser.fullname,
+    });
 
-  const payload = { id: user.id, email: user.email, role: (user as any).role ?? 'USER' };
-  const signOptions = { expiresIn: JWT_EXPIRES_IN as SignOptions['expiresIn'] } as SignOptions;
-  const token = jwt.sign(payload, JWT_SECRET as Secret, signOptions);
+    const age = calculateAge(newUser.date_of_birth);
+    validateAge.parse(age);
 
-    const { password: _p, ...safeUser } = user as any;
-    return res.status(200).json({ token, user: safeUser });
-  } catch (err) {
-    return next(err as any);
+    const result = await authService.signup(newUser);
+
+    if (!result.success) {
+      res.status(result.error!.status).json({ error: result.error!.message });
+      return;
+    }
+
+    res.status(201).json(result.data);
+  } catch (error: unknown) {
+    console.error('[signup] unhandled error', error);
+    next(error);
   }
+};
+
+const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const loginData = loginSchema.parse(req.body);
+
+    const result = await authService.login(loginData);
+
+    if (!result.success) {
+      res.status(result.error!.status).json({ error: result.error!.message });
+      return;
+    }
+
+    res.status(200).json(result.data);
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const verifyData = verifyEmailSchema.parse(req.body);
+
+    const result = await authService.verifyEmail(verifyData);
+
+    if (!result.success) {
+      res.status(result.error!.status).json({ error: result.error!.message });
+      return;
+    }
+
+    res.status(200).json(result.data);
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+const resendVerificationCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const resendData = resendVerificationCodeSchema.parse(req.body);
+
+    const result = await authService.resendVerificationCode(resendData);
+
+    if (!result.success) {
+      res.status(result.error!.status).json({ error: result.error!.message });
+      return;
+    }
+
+    res.status(200).json(result.data);
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+const verifyToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.tokenPayload) {
+      res.status(401).json({ valid: false, error: 'No token payload found' });
+      return;
+    }
+
+    const { userId } = req.tokenPayload;
+
+    // Verificar permisos basados en roles (si se especificaron)
+    const { allowedRoles } = req.query;
+
+    if (
+      !allowedRoles ||
+      allowedRoles === '' ||
+      typeof allowedRoles !== 'string'
+    ) {
+      res.status(403).json({
+        error: 'Permisos insuficientes',
+      });
+      return;
+    }
+
+    const rolesArray = allowedRoles.split(',').map(r => r.trim());
+
+    const result = await authService.verifyToken(userId, rolesArray);
+
+    if (!result.success) {
+      res.status(result.error!.status).json({ error: result.error!.message });
+      return;
+    }
+
+    res.status(200).json(result.data);
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+export default {
+  signup,
+  login,
+  verifyEmail,
+  resendVerificationCode,
+  verifyToken,
 };

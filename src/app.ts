@@ -1,14 +1,15 @@
 import express from 'express';
-import authRoutes from './routes/auth.routes.js';
-
 const app = express();
+import cors from 'cors';
+import router from './routes/router.js';
+import unknownEndpoint from './middleware/unknownEndpoint.js';
+import errorHandler from './middleware/errorHandler.js';
 
 app.use(express.json());
+app.use(cors());
 
-app.get('/', (_req, res) => {
-  res.send('Auth Service is running');
-});
-
-app.use('/api/auth', authRoutes);
+app.use('/api/v1', router);
+app.use(unknownEndpoint);
+app.use(errorHandler);
 
 export default app;
