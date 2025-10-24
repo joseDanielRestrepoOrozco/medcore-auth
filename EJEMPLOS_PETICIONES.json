@@ -1,0 +1,209 @@
+{
+  "descripcion": "Ejemplos de cuerpos JSON para todas las peticiones del microservicio Auth",
+  "nota_importante": "⚠️ Los valores entre < > son PLACEHOLDERS que debes reemplazar con IDs reales. Un ObjectId de MongoDB es una cadena hexadecimal de 24 caracteres, ejemplo: '507f1f77bcf86cd799439011'",
+
+  "0_como_obtener_ids_validos": {
+    "descripcion": "Antes de registrar usuarios, debes crear departamentos y especialidades para obtener sus IDs",
+    "paso_1": "Crear un departamento usando el endpoint POST /api/departamentos",
+    "paso_2": "La respuesta incluirá el 'id' del departamento creado (24 caracteres hexadecimales)",
+    "paso_3": "Usar ese ID para crear especialidades en POST /api/especialidades",
+    "paso_4": "Usar los IDs obtenidos en los campos especialtyId y departmentId al registrar usuarios",
+    "ejemplo_id_valido": "507f1f77bcf86cd799439011",
+    "ejemplo_id_invalido": "<ID_DE_LA_ESPECIALIDAD>"
+  },
+
+  "1_crear_departamento": {
+    "endpoint": "POST /api/departamentos",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <TU_TOKEN_JWT>"
+    },
+    "body": {
+      "name": "Medicina Interna",
+      "description": "Departamento de medicina general y especialidades internas"
+    }
+  },
+
+  "2_crear_especialidad": {
+    "endpoint": "POST /api/especialidades",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <TU_TOKEN_JWT>"
+    },
+    "body": {
+      "name": "Cardiología",
+      "description": "Especialidad en enfermedades del corazón y sistema cardiovascular",
+      "departmentId": "<ID_DEL_DEPARTAMENTO_CREADO>"
+    },
+    "nota": "El departmentId debe ser el ObjectId de un departamento existente"
+  },
+
+  "3_registrar_medico": {
+    "endpoint": "POST /api/auth/sign-up",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "doctor.perez@hospital.com",
+      "current_password": "Doctor123",
+      "fullname": "Dr. Juan Pérez López",
+      "documentNumber": "1234567890",
+      "phone": "+573001234567",
+      "date_of_birth": "1985-05-15",
+      "role": "MEDICO",
+      "medico": {
+        "especialtyId": "<ID_DE_LA_ESPECIALIDAD>",
+        "license_number": "MED-2024-12345"
+      }
+    },
+    "nota": "especialtyId debe ser el ObjectId de una especialidad existente"
+  },
+
+  "4_registrar_enfermera": {
+    "endpoint": "POST /api/auth/sign-up",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "enfermera.gonzalez@hospital.com",
+      "current_password": "Enfermera123",
+      "fullname": "María González Ramírez",
+      "documentNumber": "9876543210",
+      "phone": "+573009876543",
+      "date_of_birth": "1992-08-20",
+      "role": "ENFERMERA",
+      "enfermera": {
+        "departmentId": "<ID_DEL_DEPARTAMENTO>"
+      }
+    },
+    "nota": "departmentId debe ser el ObjectId de un departamento existente"
+  },
+
+  "5_registrar_paciente": {
+    "endpoint": "POST /api/auth/sign-up",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "paciente.rodriguez@email.com",
+      "current_password": "Paciente123",
+      "fullname": "Carlos Rodríguez Méndez",
+      "documentNumber": "5554443332",
+      "phone": "+573005554321",
+      "date_of_birth": "1995-03-10",
+      "role": "PACIENTE",
+      "paciente": {
+        "gender": "Masculino",
+        "address": "Calle 123 #45-67, Medellín"
+      }
+    },
+    "nota": "Los campos gender y address son obligatorios para pacientes"
+  },
+
+  "6_registrar_administrador": {
+    "endpoint": "POST /api/auth/sign-up",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "admin.sistema@hospital.com",
+      "current_password": "Admin123",
+      "fullname": "Admin Sistema Principal",
+      "documentNumber": "1111222233",
+      "phone": "+573007778888",
+      "date_of_birth": "1980-01-01",
+      "role": "ADMINISTRADOR"
+    },
+    "nota": "El administrador NO requiere campos adicionales"
+  },
+
+  "7_login": {
+    "endpoint": "POST /api/auth/log-in",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "doctor.perez@hospital.com",
+      "current_password": "Doctor123"
+    }
+  },
+
+  "8_verificar_email": {
+    "endpoint": "POST /api/auth/verify-email",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "doctor.perez@hospital.com",
+      "verificationCode": "123456"
+    },
+    "nota": "El código es enviado al email al momento del registro"
+  },
+
+  "9_reenviar_codigo": {
+    "endpoint": "POST /api/auth/resend-verification-code",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "email": "doctor.perez@hospital.com"
+    }
+  },
+
+  "10_verificar_token": {
+    "endpoint": "GET /api/auth/verify-token",
+    "headers": {
+      "Authorization": "Bearer <TU_TOKEN_JWT>"
+    },
+    "nota": "No requiere body, solo el token en el header"
+  },
+
+  "ejemplos_con_curl": {
+    "crear_departamento": "curl -X POST http://localhost:3000/api/departamentos -H 'Content-Type: application/json' -H 'Authorization: Bearer <TOKEN>' -d '{\"name\":\"Medicina Interna\",\"description\":\"Departamento de medicina general\"}'",
+
+    "crear_especialidad": "curl -X POST http://localhost:3000/api/especialidades -H 'Content-Type: application/json' -H 'Authorization: Bearer <TOKEN>' -d '{\"name\":\"Cardiología\",\"description\":\"Especialidad en enfermedades del corazón\",\"departmentId\":\"<DEPT_ID>\"}'",
+
+    "registrar_medico": "curl -X POST http://localhost:3000/api/auth/sign-up -H 'Content-Type: application/json' -d '{\"email\":\"doctor@hospital.com\",\"current_password\":\"Doctor123\",\"fullname\":\"Dr. Juan Pérez\",\"documentNumber\":\"1234567890\",\"phone\":\"+573001234567\",\"date_of_birth\":\"1985-05-15\",\"role\":\"MEDICO\",\"medico\":{\"especialtyId\":\"<ESP_ID>\",\"license_number\":\"MED-12345\"}}'",
+
+    "registrar_enfermera": "curl -X POST http://localhost:3000/api/auth/sign-up -H 'Content-Type: application/json' -d '{\"email\":\"enfermera@hospital.com\",\"current_password\":\"Enfermera123\",\"fullname\":\"María González\",\"documentNumber\":\"9876543210\",\"phone\":\"+573009876543\",\"date_of_birth\":\"1992-08-20\",\"role\":\"ENFERMERA\",\"enfermera\":{\"departmentId\":\"<DEPT_ID>\"}}'",
+
+    "registrar_paciente": "curl -X POST http://localhost:3000/api/auth/sign-up -H 'Content-Type: application/json' -d '{\"email\":\"paciente@email.com\",\"current_password\":\"Paciente123\",\"fullname\":\"Carlos Rodríguez\",\"documentNumber\":\"5554443332\",\"phone\":\"+573005554321\",\"date_of_birth\":\"1995-03-10\",\"role\":\"PACIENTE\",\"paciente\":{\"gender\":\"Masculino\",\"address\":\"Calle 123 #45-67\"}}'",
+
+    "registrar_administrador": "curl -X POST http://localhost:3000/api/auth/sign-up -H 'Content-Type: application/json' -d '{\"email\":\"admin@hospital.com\",\"current_password\":\"Admin123\",\"fullname\":\"Admin Sistema\",\"documentNumber\":\"1111222233\",\"phone\":\"+573007778888\",\"date_of_birth\":\"1980-01-01\",\"role\":\"ADMINISTRADOR\"}'",
+
+    "login": "curl -X POST http://localhost:3000/api/auth/log-in -H 'Content-Type: application/json' -d '{\"email\":\"doctor@hospital.com\",\"current_password\":\"Doctor123\"}'",
+
+    "verificar_email": "curl -X POST http://localhost:3000/api/auth/verify-email -H 'Content-Type: application/json' -d '{\"email\":\"doctor@hospital.com\",\"verificationCode\":\"123456\"}'",
+
+    "verificar_token": "curl -X GET http://localhost:3000/api/auth/verify-token -H 'Authorization: Bearer <TOKEN>'"
+  },
+
+  "validaciones_importantes": {
+    "email": "Debe ser único en el sistema",
+    "current_password": "Mínimo 6 caracteres y debe contener al menos un número",
+    "fullname": "Solo letras (incluyendo acentos y ñ) y espacios",
+    "documentNumber": "Solo números, único en el sistema",
+    "date_of_birth": "Formato ISO (YYYY-MM-DD), edad calculada debe estar entre 1-100 años",
+    "especialtyId": "Debe existir en la colección Especiality (para médicos) y ser un ObjectId válido de 24 caracteres hexadecimales",
+    "departmentId": "Debe existir en la colección Department (para enfermeras/especialidades) y ser un ObjectId válido de 24 caracteres hexadecimales",
+    "gender": "Campo obligatorio para pacientes",
+    "administrador": "NO requiere campos adicionales por ahora",
+    "formato_objectid": "Un ObjectId válido debe tener exactamente 24 caracteres hexadecimales (0-9, a-f)"
+  },
+
+  "mensajes_de_error_comunes": {
+    "error_objectid_invalido": "Si envías un ID inválido como '<ID_DE_LA_ESPECIALIDAD>', recibirás el error: 'especialtyId no es un ID válido. Debe ser una cadena hexadecimal de 24 caracteres'",
+    "error_especialidad_no_existe": "Si el ObjectId tiene formato válido pero la especialidad no existe: 'La especialidad especificada no existe'",
+    "error_departamento_no_existe": "Si el ObjectId tiene formato válido pero el departamento no existe: 'El departamento especificado no existe'",
+    "solucion": "Primero crea departamentos y especialidades, luego copia los IDs de las respuestas para usarlos en el registro de usuarios"
+  },
+
+  "flujo_recomendado": [
+    "1. Crear departamentos",
+    "2. Crear especialidades (requieren departmentId)",
+    "3. Registrar usuarios (médicos requieren especialtyId, enfermeras requieren departmentId)",
+    "4. Verificar email con el código recibido",
+    "5. Login para obtener el token JWT",
+    "6. Usar el token para acceder a endpoints protegidos"
+  ]
+}

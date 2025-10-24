@@ -36,664 +36,340 @@ Content-Type: application/json
 
 ### Request Body
 
-#### Campos Comunes (todos los roles)
+# 📚 Documentación de la API — Microservicio Auth
 
-| Campo              | Tipo   | Requerido | Descripción                                                |
-| ------------------ | ------ | --------- | ---------------------------------------------------------- |
-| `email`            | string | ✅        | Email válido                                               |
-| `current_password` | string | ✅        | Mínimo 6 caracteres, debe contener al menos un número      |
-| `fullname`         | string | ✅        | Nombre completo (solo letras y espacios)                   |
-| `phone`            | string | ❌        | Teléfono de contacto                                       |
-| `date_of_birth`    | string | ✅        | Fecha de nacimiento (formato ISO: YYYY-MM-DD)              |
-| `gender`           | string | ❌        | Género                                                     |
-| `role`             | string | ✅        | Uno de: `MEDICO`, `ENFERMERA`, `PACIENTE`, `ADMINISTRADOR` |
+Esta documentación describe los endpoints y modelos del microservicio de autenticación adaptado a la nueva arquitectura con MongoDB y tipos compuestos (composite types) en Prisma.
 
-#### Campos adicionales por rol
+Base URL (local): http://localhost:<PORT>/api
 
-**MEDICO:**
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `specialization` | string | ✅ | Especialización médica |
-| `department` | string | ✅ | Departamento |
-| `license_number` | string | ✅ | Número de licencia médica |
+Rutas principales del servicio:
 
-**ENFERMERA:**
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `department` | string | ✅ | Departamento |
-
-**PACIENTE:** _(sin campos adicionales)_
-
-**ADMINISTRADOR:** _(sin campos adicionales)_
-
-### Ejemplos de Request
-
-#### Paciente
-
-```json
-{
-  "email": "paciente@example.com",
-  "current_password": "password123",
-  "fullname": "Juan Pérez",
-  "phone": "+573001234567",
-  "date_of_birth": "1990-05-15",
-  "gender": "Masculino",
-  "role": "PACIENTE"
-}
-```
-
-#### Médico
-
-```json
-{
-  "email": "doctor@example.com",
-  "current_password": "securePass123",
-  "fullname": "Dr. María González",
-  "phone": "+573007654321",
-  "date_of_birth": "1985-03-20",
-  "role": "MEDICO",
-  "specialization": "Cardiología",
-  "department": "Medicina Interna",
-  "license_number": "MED-12345"
-}
-```
-
-### Response Success (201 Created)
-
-```json
-{
-  "id": "6507f1b2e3d8a9c4b5a6e7f8",
-  "email": "paciente@example.com",
-  "fullname": "Juan Pérez",
-  "status": "PENDING",
-  "role": "PACIENTE",
-  "message": "Usuario creado. Código enviado al correo."
-}
-```
-
-### Response Errors
-
-**400 Bad Request** - Usuario ya existe
-
-```json
-{
-  "error": "User already exists"
-}
-```
-
-**400 Bad Request** - Datos inválidos
-
-```json
-{
-  "error": "Debe tener al menos 6 caracteres",
-  "details": {
-    "current_password": ["Debe tener al menos 6 caracteres"]
-  }
-}
-```
-
-**400 Bad Request** - Edad inválida
-
-```json
-{
-  "error": "Invalid type: expected number but received string"
-}
-```
-
-**500 Internal Server Error** - Error enviando email
-
-```json
-{
-  "error": "Error sending verification email"
-}
-```
-
-### Notas
-
-- La edad debe estar entre 1 y 100 años
-- Se envía automáticamente un código de verificación al email
-- El código expira en 15 minutos
-- El usuario se crea con status `PENDING` hasta verificar el email
+- /api/auth — endpoints de autenticación
+- /api/departamentos — gestión de departamentos
+- /api/especialidades — gestión de especialidades
 
 ---
 
-## 2. Log In (Inicio de sesión)
+## Índice
 
-Autentica un usuario y retorna un token JWT.
-
-### Endpoint
-
-```
-POST /api/v1/auth/log-in
-```
-
-### Headers
-
-```
-Content-Type: application/json
-```
-
-### Request Body
-
-| Campo              | Tipo   | Requerido | Descripción            |
-| ------------------ | ------ | --------- | ---------------------- |
-| `email`            | string | ✅        | Email registrado       |
-| `current_password` | string | ✅        | Contraseña del usuario |
-
-### Ejemplo de Request
-
-```json
-{
-  "email": "paciente@example.com",
-  "current_password": "password123"
-}
-```
-
-### Response Success (200 OK)
-
-```json
-{
-  "message": "Login exitoso",
-  "user": {
-    "id": "6507f1b2e3d8a9c4b5a6e7f8",
-    "email": "paciente@example.com",
-    "fullname": "Juan Pérez",
-    "status": "ACTIVE",
-    "role": "PACIENTE"
-  },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-### Response Errors
-
-**401 Unauthorized** - Credenciales inválidas
-
-```json
-{
-  "error": "Credenciales inválidas"
-}
-```
-
-**401 Unauthorized** - Email no verificado
-
-```json
-{
-  "error": "Email no verificado. Revisa tu correo."
-}
-```
-
-**500 Internal Server Error** - Error de configuración
-
-```json
-{
-  "error": "Error de configuración del servidor"
-}
-```
-
-### Notas
-
-- El token JWT expira en 24 horas
-- El usuario debe tener status `ACTIVE` para poder iniciar sesión
-- El token contiene: `userId`, `email`, `fullname`, `role`
+- Modelos y tipos
+- Endpoints de Auth
+- Endpoints de Departamentos
+- Endpoints de Especialidades
+- Ejemplos de payloads
+- Validaciones y notas
 
 ---
 
-## 3. Verify Email
+## Modelos y tipos (resumen)
 
-Verifica el email del usuario usando el código enviado por correo.
+Prisma (MongoDB) usa tipos compuestos para datos específicos por rol. A continuación el resumen de los modelos relevantes:
 
-### Endpoint
+- Departamento
 
-```
-POST /api/v1/auth/verify-email
-```
+  - id (ObjectId)
+  - nombre (string, único)
+  - descripcion (string?)
+  - especialidades (relación 1:N)
 
-### Headers
+- Especialidad
 
-```
-Content-Type: application/json
-```
+  - id (ObjectId)
+  - nombre (string, único)
+  - descripcion (string?)
+  - departamentoId (ObjectId) -> Departamento
 
-### Request Body
+- Users (colección principal)
+  - id (ObjectId)
+  - email (string, único)
+  - current_password (string - hashed)
+  - fullname (string)
+  - role (enum: MEDICO | ENFERMERA | PACIENTE | ADMINISTRADOR)
+  - date_of_birth (DateTime)
+  - age (Int)
+  - phone (string?)
+  - gender (string?)
+  - status (enum: PENDING | ACTIVE | INACTIVE)
+  - verificationCode (string?)
+  - verificationCodeExpires (DateTime?)
+  - medico (DatosMedico?) — tipo compuesto
+  - enfermera (DatosEnfermera?) — tipo compuesto
+  - paciente (DatosPaciente?) — tipo compuesto
+  - administrador (DatosAdministrador?) — tipo compuesto
 
-| Campo              | Tipo   | Requerido | Descripción                            |
-| ------------------ | ------ | --------- | -------------------------------------- |
-| `email`            | string | ✅        | Email del usuario                      |
-| `verificationCode` | string | ✅        | Código de 6 dígitos recibido por email |
+Tipos compuestos relevantes:
 
-### Ejemplo de Request
+- DatosMedico
 
-```json
-{
-  "email": "paciente@example.com",
-  "verificationCode": "123456"
-}
-```
+  - especialidadId (ObjectId) — referencia a `Especialidad`
+  - licenciaMedica (string)
 
-### Response Success (200 OK)
+- DatosEnfermera
 
-```json
-{
-  "message": "Email verificado exitosamente",
-  "user": {
-    "id": "6507f1b2e3d8a9c4b5a6e7f8",
-    "email": "paciente@example.com",
-    "fullname": "Juan Pérez",
-    "status": "ACTIVE"
-  }
-}
-```
+  - departamentoId (ObjectId) — referencia a `Departamento`
 
-### Response Errors
+- DatosPaciente
 
-**404 Not Found** - Usuario no encontrado
+  - grupoSanguineo (string?)
+  - alergias (string[])
+  - contactoEmergencia (string?)
 
-```json
-{
-  "error": "Usuario no encontrado"
-}
-```
-
-**400 Bad Request** - Usuario ya verificado
-
-```json
-{
-  "error": "Usuario ya verificado"
-}
-```
-
-**400 Bad Request** - Código inválido
-
-```json
-{
-  "error": "Código de verificación inválido"
-}
-```
-
-**400 Bad Request** - Código expirado
-
-```json
-{
-  "error": "Código de verificación expirado"
-}
-```
-
-### Notas
-
-- El código tiene una validez de 15 minutos
-- Una vez verificado, el status del usuario cambia a `ACTIVE`
-- El código de verificación se elimina después de ser usado
+- DatosAdministrador
+  - nivelAcceso (string?)
+  - departamentoAsignado (string?)
 
 ---
 
-## 4. Resend Verification Code
+## Endpoints — Autenticación
 
-Reenvía el código de verificación al email del usuario.
+Todas las rutas de auth están bajo `/api/auth`.
 
-### Endpoint
+1. Registro (Sign Up)
 
-```
-POST /api/v1/auth/resend-verification-code
-```
+POST /api/auth/sign-up
 
-### Headers
+Headers: Content-Type: application/json
 
-```
-Content-Type: application/json
-```
+Payload base (común para todos):
 
-### Request Body
-
-| Campo   | Tipo   | Requerido | Descripción       |
-| ------- | ------ | --------- | ----------------- |
-| `email` | string | ✅        | Email del usuario |
-
-### Ejemplo de Request
-
-```json
 {
-  "email": "paciente@example.com"
+"email": "string",
+"current_password": "string",
+"fullname": "string",
+"date_of_birth": "YYYY-MM-DD",
+"role": "MEDICO|ENFERMERA|PACIENTE|ADMINISTRADOR",
+"phone": "string (opcional)",
+"gender": "string (opcional)"
 }
-```
 
-### Response Success (200 OK)
+Payloads por rol (ejemplos):
 
-```json
+- Médico
+
 {
-  "message": "Código de verificación reenviado exitosamente"
+"role": "MEDICO",
+"medico": {
+"especialidadId": "<ObjectId de Especialidad>",
+"licenciaMedica": "MED-12345"
 }
-```
+}
 
-### Response Errors
+- Enfermera
 
-**404 Not Found** - Usuario no encontrado
-
-```json
 {
-  "error": "Usuario no encontrado"
+"role": "ENFERMERA",
+"enfermera": {
+"departamentoId": "<ObjectId de Departamento>"
 }
-```
+}
 
-**400 Bad Request** - Usuario ya verificado
+- Paciente (opcionalmente con datos)
 
-```json
 {
-  "error": "Usuario ya verificado"
+"role": "PACIENTE",
+"paciente": {
+"grupoSanguineo": "O+",
+"alergias": ["Penicilina"],
+"contactoEmergencia": "+573001112233"
 }
-```
+}
 
-**500 Internal Server Error** - Error enviando email
+- Administrador (opcionalmente con datos)
 
-```json
 {
-  "error": "Error enviando código de verificación"
+"role": "ADMINISTRADOR",
+"administrador": {
+"nivelAcceso": "TOTAL",
+"departamentoAsignado": "Sistemas"
 }
-```
+}
 
-### Notas
+Respuestas:
 
-- Genera un nuevo código de 6 dígitos
-- El nuevo código también expira en 15 minutos
-- El código anterior se invalida automáticamente
+- 201 Created: usuario creado (status PENDING). Se envía código de verificación por email.
+- 400 Bad Request: datos inválidos o referencias inexistentes (especialidad/departamento no existe).
+
+Validaciones importantes durante signup:
+
+- Si role = MEDICO: `medico.especialidadId` debe existir en `Especialidad`.
+- Si role = ENFERMERA: `enfermera.departamentoId` debe existir en `Departamento`.
+- Email único y contraseña con al menos 6 caracteres y un número.
+
+2. Log In
+
+POST /api/auth/log-in
+
+Body: { email, current_password }
+
+Respuesta 200: token JWT + usuario (sin contraseña).
+
+3. Verify Email
+
+POST /api/auth/verify-email
+
+Body: { email, verificationCode }
+
+Acción: cambia `status` a `ACTIVE` si el código coincide y no ha expirado.
+
+4. Resend Verification Code
+
+POST /api/auth/resend-verification-code
+
+Body: { email }
+
+5. Verify Token
+
+GET /api/auth/verify-token
+Headers: Authorization: Bearer <token>
+
+Opcional: parámetros para verificar roles (por ejemplo allowedRoles).
 
 ---
 
-## 5. Verify Token
+## Endpoints — Departamentos
 
-Valida un token JWT y verifica permisos basados en roles. Este endpoint es usado principalmente por otros microservicios.
+Todas las rutas bajo `/api/departamentos`.
 
-### Endpoint
+- POST /api/departamentos — crear departamento
 
-```
-GET /api/v1/auth/verify-token
-```
+  - Body: { nombre: string, descripcion?: string }
+  - Respuesta 201: departamento creado
 
-### Headers
+- GET /api/departamentos — listar todos (incluye especialidades)
 
-```
-Authorization: Bearer <token>
-```
+- GET /api/departamentos/:id — obtener por id (incluye especialidades)
 
-### Query Parameters (Opcionales)
+- PUT /api/departamentos/:id — actualizar (nombre, descripcion)
 
-| Parámetro      | Tipo   | Descripción                                                               |
-| -------------- | ------ | ------------------------------------------------------------------------- |
-| `requiredRole` | string | Verifica que el usuario tenga exactamente este rol                        |
-| `allowedRoles` | string | Lista de roles permitidos separados por coma (ej: `MEDICO,ADMINISTRADOR`) |
+- DELETE /api/departamentos/:id — elimina (fallará si hay especialidades asociadas)
 
-### Ejemplos de Request
+Notas:
 
-#### Sin verificación de roles
+- `nombre` debe ser único.
+- No eliminar departamento con especialidades asociadas.
+
+---
+
+## Endpoints — Especialidades
+
+Todas las rutas bajo `/api/especialidades`.
+
+- POST /api/especialidades — crear especialidad
+
+  - Body: { nombre: string, descripcion?: string, departamentoId: string }
+  - Verifica que `departamentoId` exista.
+
+- GET /api/especialidades — listar todas (incluye departamento)
+
+- GET /api/especialidades/departamento/:departamentoId — especialidades por departamento
+
+- GET /api/especialidades/:id — obtener por id
+
+- PUT /api/especialidades/:id — actualizar
+
+- DELETE /api/especialidades/:id — eliminar
+
+Validación:
+
+- `nombre` único; `departamentoId` debe existir.
+
+---
+
+## Ejemplos de payloads y uso (cURL)
+
+1. Crear departamento
 
 ```bash
-GET /api/v1/auth/verify-token
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+curl -X POST http://localhost:3000/api/departamentos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{"nombre":"Medicina Interna","descripcion":"..."}'
 ```
 
-#### Con rol requerido
+2. Crear especialidad
 
 ```bash
-GET /api/v1/auth/verify-token?requiredRole=MEDICO
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+curl -X POST http://localhost:3000/api/especialidades \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{"nombre":"Cardiología","departamentoId":"<DEPT_ID>"}'
 ```
 
-#### Con múltiples roles permitidos
+3. Registrar médico (ejemplo minimal)
 
 ```bash
-GET /api/v1/auth/verify-token?allowedRoles=MEDICO,ADMINISTRADOR
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-### Response Success (200 OK)
-
-```json
-{
-  "valid": true,
-  "user": {
-    "id": "6507f1b2e3d8a9c4b5a6e7f8",
-    "email": "doctor@example.com",
-    "fullname": "Dr. María González",
-    "role": "MEDICO",
-    "status": "ACTIVE",
-    "specialization": "Cardiología",
-    "department": "Medicina Interna",
-    "license_number": "MED-12345"
-  }
-}
-```
-
-### Response Errors
-
-**401 Unauthorized** - Token no proporcionado
-
-```json
-{
-  "error": "No token provided"
-}
-```
-
-**401 Unauthorized** - Token inválido
-
-```json
-{
-  "error": "token no valido"
-}
-```
-
-**401 Unauthorized** - Token expirado
-
-```json
-{
-  "error": "token expirado"
-}
-```
-
-**403 Forbidden** - Permisos insuficientes (rol específico)
-
-```json
-{
-  "error": "Permisos insuficientes",
-  "required": "MEDICO",
-  "current": "PACIENTE"
-}
-```
-
-**403 Forbidden** - Permisos insuficientes (múltiples roles)
-
-```json
-{
-  "error": "Permisos insuficientes",
-  "allowed": ["MEDICO", "ADMINISTRADOR"],
-  "current": "PACIENTE"
-}
-```
-
-**403 Forbidden** - Usuario no activo
-
-```json
-{
-  "error": "Cuenta de usuario no está activa"
-}
-```
-
-**404 Not Found** - Usuario no encontrado
-
-```json
-{
-  "error": "Usuario no encontrado"
-}
-```
-
-### Notas
-
-- El token debe enviarse en el header `Authorization` con el formato `Bearer <token>`
-- La información del usuario se obtiene de la base de datos, no del token
-- Esto permite revocación implícita: si un usuario es desactivado, sus tokens dejan de funcionar
-- El rol se verifica contra la base de datos para prevenir manipulación del token
-
----
-
-## Códigos de Estado HTTP
-
-| Código | Significado           | Cuándo se usa                                         |
-| ------ | --------------------- | ----------------------------------------------------- |
-| 200    | OK                    | Operación exitosa (login, verify-email, verify-token) |
-| 201    | Created               | Usuario creado exitosamente                           |
-| 400    | Bad Request           | Datos inválidos o reglas de negocio no cumplidas      |
-| 401    | Unauthorized          | Credenciales inválidas o token faltante/inválido      |
-| 403    | Forbidden             | Token válido pero sin permisos suficientes            |
-| 404    | Not Found             | Recurso no encontrado (usuario)                       |
-| 500    | Internal Server Error | Error del servidor o configuración                    |
-
----
-
-## Tipos de Roles
-
-| Rol             | Descripción                 | Campos Adicionales                         |
-| --------------- | --------------------------- | ------------------------------------------ |
-| `PACIENTE`      | Pacientes del sistema       | Ninguno                                    |
-| `MEDICO`        | Médicos                     | specialization, department, license_number |
-| `ENFERMERA`     | Enfermeras                  | department                                 |
-| `ADMINISTRADOR` | Administradores del sistema | Ninguno                                    |
-
----
-
-## Validaciones Generales
-
-### Email
-
-- Debe ser un email válido
-- Único en el sistema
-
-### Contraseña (current_password)
-
-- Mínimo 6 caracteres
-- Debe contener al menos un número
-
-### Nombre completo (fullname)
-
-- Solo letras (incluyendo acentos y ñ) y espacios
-- No puede estar vacío
-
-### Fecha de nacimiento (date_of_birth)
-
-- Formato ISO 8601: `YYYY-MM-DD`
-- La edad calculada debe estar entre 1 y 100 años
-
-### Código de verificación
-
-- Exactamente 6 dígitos numéricos
-- Válido por 15 minutos
-
----
-
-## Seguridad
-
-### Tokens JWT
-
-- Algoritmo: HS256
-- Expiración: 24 horas
-- Contiene: userId, email, fullname, role
-
-### Contraseñas
-
-- Hasheadas con bcrypt (10 rounds)
-- Nunca se retornan en las respuestas
-
-### Verificación de Email
-
-- Obligatoria para activar la cuenta
-- Códigos de un solo uso
-- Expiración automática
-
-### Validación de Roles
-
-- Verificada contra la base de datos
-- No se confía únicamente en el token JWT
-- Permite revocación de permisos en tiempo real
-
----
-
-## Ejemplos de Uso con cURL
-
-### Sign Up
-
-```bash
-curl -X POST http://localhost:3000/api/v1/auth/sign-up \
+curl -X POST http://localhost:3000/api/auth/sign-up \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
-    "current_password": "password123",
-    "fullname": "Test User",
-    "date_of_birth": "1990-01-01",
-    "role": "PACIENTE"
+    "email":"doctor.perez@hospital.com",
+    "current_password":"Doctor123",
+    "fullname":"Dr. Juan Pérez",
+    "date_of_birth":"1985-05-15",
+    "role":"MEDICO",
+    "medico": {"especialidadId":"<ESPECIALIDAD_ID>", "licenciaMedica":"MED-12345"}
   }'
 ```
 
-### Log In
+4. Registrar enfermera
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/log-in \
+curl -X POST http://localhost:3000/api/auth/sign-up \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
-    "current_password": "password123"
+    "email":"enfermera@hospital.com",
+    "current_password":"Enfermera123",
+    "fullname":"María González",
+    "date_of_birth":"1992-08-20",
+    "role":"ENFERMERA",
+    "enfermera": {"departamentoId":"<DEPARTAMENTO_ID>"}
   }'
 ```
 
-### Verify Email
+5. Registrar paciente (simple)
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/verify-email \
+curl -X POST http://localhost:3000/api/auth/sign-up \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
-    "verificationCode": "123456"
+    "email":"paciente@ejemplo.com",
+    "current_password":"Paciente123",
+    "fullname":"Carlos R",
+    "date_of_birth":"1995-03-10",
+    "role":"PACIENTE"
   }'
-```
-
-### Verify Token
-
-```bash
-curl -X GET http://localhost:3000/api/v1/auth/verify-token \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
-```
-
-### Verify Token con rol requerido
-
-```bash
-curl -X GET "http://localhost:3000/api/v1/auth/verify-token?requiredRole=MEDICO" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
 ```
 
 ---
 
-## Flujo de Autenticación Completo
+## Validaciones y notas importantes
 
-```
-1. Usuario se registra (POST /sign-up)
-   ↓
-2. Sistema envía código de verificación por email
-   ↓
-3. Usuario verifica email (POST /verify-email)
-   ↓
-4. Status cambia a ACTIVE
-   ↓
-5. Usuario inicia sesión (POST /log-in)
-   ↓
-6. Sistema retorna JWT token
-   ↓
-7. Usuario usa token en requests subsecuentes
-   ↓
-8. Otros microservicios validan token (GET /verify-token)
+- Email único.
+- Password: mínimo 6 caracteres y al menos un número.
+- `medico.especialidadId` debe existir; `enfermera.departamentoId` debe existir.
+- Edad calculada entre 1 y 100 años.
+- El registro crea al usuario con `status = PENDING` y envía un código de verificación (15 minutos de validez).
+
+## Comandos útiles (Prisma)
+
+Para regenerar el cliente y aplicar cambios en el esquema:
+
+```bash
+cd auth
+npx prisma generate
+npx prisma db push
 ```
 
 ---
 
-## Soporte
+## Resumen rápido de campos por rol
 
-Para reportar problemas o sugerencias, contacta al equipo de desarrollo de MedCore.
+- Médico: `medico.especialidadId` (ObjectId), `medico.licenciaMedica` (string)
+- Enfermera: `enfermera.departamentoId` (ObjectId)
+- Paciente: `paciente` (opcional: `grupoSanguineo`, `alergias`, `contactoEmergencia`)
+- Administrador: `administrador` (opcional: `nivelAcceso`, `departamentoAsignado`)
 
-**Versión:** 1.0.0  
-**Última actualización:** 21 de octubre de 2025
+---
+
+Si quieres, puedo generar también un seed script completo que cree departamentos, especialidades y usuarios de ejemplo para probar localmente.
+
+Última actualización: 24 de octubre de 2025

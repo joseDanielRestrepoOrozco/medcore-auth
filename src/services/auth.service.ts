@@ -48,6 +48,41 @@ class AuthService {
         };
       }
 
+      // Validaciones específicas según el rol
+      if (userData.role === 'MEDICO') {
+        // Verificar que la especialidad existe
+        const especialtyExists = await prisma.especialty.findUnique({
+          where: { id: userData.medico.especialtyId },
+        });
+
+        if (!especialtyExists) {
+          return {
+            success: false,
+            error: {
+              status: 400,
+              message: 'La especialidad especificada no existe',
+            },
+          };
+        }
+      }
+
+      if (userData.role === 'ENFERMERA') {
+        // Verificar que el departamento existe
+        const departmentExists = await prisma.department.findUnique({
+          where: { id: userData.enfermera.departmentId },
+        });
+
+        if (!departmentExists) {
+          return {
+            success: false,
+            error: {
+              status: 400,
+              message: 'El departamento especificado no existe',
+            },
+          };
+        }
+      }
+
       // Calcular edad
       const age = calculateAge(userData.date_of_birth);
 
@@ -58,21 +93,67 @@ class AuthService {
         verificationCodeExpires.getMinutes() + 15
       );
 
-      // Crear usuario
-      const createUser = await prisma.users.create({
-        data: {
-          ...userData,
-          age,
-          date_of_birth: new Date(userData.date_of_birth),
-          current_password: await bcrypt.hash(userData.current_password, 10),
-          verificationCode,
-          verificationCodeExpires,
-        },
-      });
+      // Preparar datos del usuario según el rol
+      let createUser;
+
+      const baseFields = {
+        email: userData.email,
+        fullname: userData.fullname,
+        documentNumber: userData.documentNumber,
+        role: userData.role,
+        age,
+        date_of_birth: new Date(userData.date_of_birth),
+        current_password: await bcrypt.hash(userData.current_password, 10),
+        verificationCode,
+        verificationCodeExpires,
+        phone: userData.phone,
+        status: userData.status || 'PENDING',
+      };
+
+      switch (userData.role) {
+        case 'MEDICO':
+          createUser = await prisma.users.create({
+            data: {
+              ...baseFields,
+              medico: {
+                especialtyId: userData.medico.especialtyId,
+                license_number: userData.medico.license_number,
+              },
+            },
+          });
+          break;
+        case 'ENFERMERA':
+          createUser = await prisma.users.create({
+            data: {
+              ...baseFields,
+              enfermera: {
+                departmentId: userData.enfermera.departmentId,
+              },
+            },
+          });
+          break;
+        case 'PACIENTE':
+          createUser = await prisma.users.create({
+            data: {
+              ...baseFields,
+              paciente: {
+                gender: userData.paciente.gender,
+                address: userData.paciente.address,
+              },
+            },
+          });
+          break;
+        case 'ADMINISTRADOR':
+          createUser = await prisma.users.create({
+            data: baseFields,
+          });
+          break;
+      }
 
       console.log('[AuthService.signup] user created', {
         id: createUser.id,
         email: createUser.email,
+        role: createUser.role,
       });
 
       // Enviar email de verificación
@@ -387,9 +468,10 @@ class AuthService {
           fullname: true,
           role: true,
           status: true,
-          specialization: true,
-          department: true,
-          license_number: true,
+          medico: true,
+          enfermera: true,
+          paciente: true,
+          administrador: true,
         },
       });
 
