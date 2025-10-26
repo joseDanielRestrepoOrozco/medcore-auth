@@ -518,6 +518,56 @@ class AuthService {
       throw error;
     }
   }
+
+  async getUserById(userId: string): Promise<AuthServiceResult> {
+    try {
+      const user = await prisma.users.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          fullname: true,
+          role: true,
+          status: true,
+          documentNumber: true,
+          phone: true,
+          age: true,
+          date_of_birth: true,
+          medico: true,
+          enfermera: true,
+          paciente: true,
+        },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          error: {
+            status: 404,
+            message: 'Usuario no encontrado',
+          },
+        };
+      }
+
+      if (user.status !== 'ACTIVE') {
+        return {
+          success: false,
+          error: {
+            status: 403,
+            message: 'Cuenta de usuario no está activa',
+          },
+        };
+      }
+
+      return {
+        success: true,
+        data: user,
+      };
+    } catch (error) {
+      console.error('[AuthService.getUserById] unhandled error', error);
+      throw error;
+    }
+  }
 }
 
 export default new AuthService();

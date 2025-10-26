@@ -8,5 +8,6 @@ router.post('/log-in', authController.login);
 router.post('/verify-email', authController.verifyEmail);
 router.post('/resend-verification-code', authController.resendVerificationCode);
 router.get('/verify-token', tokenExtractor, authController.verifyToken);
+router.get('/authenticate', tokenExtractor, authController.authenticate);
 
 export default router;

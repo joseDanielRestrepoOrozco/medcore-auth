@@ -144,10 +144,40 @@ const verifyToken = async (
   }
 };
 
+const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.tokenPayload) {
+      res.status(401).json({ valid: false, error: 'No token payload found' });
+      return;
+    }
+
+    const { userId } = req.tokenPayload;
+
+    const result = await authService.getUserById(userId);
+
+    if (!result.success) {
+      res.status(result.error!.status).json({ error: result.error!.message });
+      return;
+    }
+
+    res.status(200).json({
+      valid: true,
+      user: result.data,
+    });
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
 export default {
   signup,
   login,
   verifyEmail,
   resendVerificationCode,
   verifyToken,
+  authenticate,
 };
