@@ -51,11 +51,11 @@ class AuthService {
       // Validaciones específicas según el rol
       if (userData.role === 'MEDICO') {
         // Verificar que la especialidad existe
-        const especialtyExists = await prisma.especialty.findUnique({
-          where: { id: userData.medico.especialtyId },
+        const specialtyExists = await prisma.specialty.findUnique({
+          where: { id: userData.medico.specialtyId },
         });
 
-        if (!especialtyExists) {
+        if (!specialtyExists) {
           return {
             success: false,
             error: {
@@ -116,7 +116,7 @@ class AuthService {
             data: {
               ...baseFields,
               medico: {
-                especialtyId: userData.medico.especialtyId,
+                specialtyId: userData.medico.specialtyId,
                 license_number: userData.medico.license_number,
               },
             },
@@ -471,7 +471,6 @@ class AuthService {
           medico: true,
           enfermera: true,
           paciente: true,
-          administrador: true,
         },
       });
 

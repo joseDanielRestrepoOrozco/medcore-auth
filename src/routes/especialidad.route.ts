@@ -1,5 +1,5 @@
 import express from 'express';
-import especialtyController from '../controllers/especialidad.controller.js';
+import specialtyController from '../controllers/especialidad.controller.js';
 import tokenExtractor from '../middleware/tokenExtractor.js';
 
 const router = express.Router();
@@ -8,14 +8,14 @@ const router = express.Router();
 router.use(tokenExtractor);
 
 // Rutas para especialidades
-router.post('/', especialtyController.createEspecialty);
-router.get('/', especialtyController.getAllEspecialties);
+router.post('/', specialtyController.createSpecialty);
+router.get('/', specialtyController.getAllSpecialties);
 router.get(
   '/department/:departmentId',
-  especialtyController.getEspecialtiesByDepartment
+  specialtyController.getSpecialtiesByDepartment
 );
-router.get('/:id', especialtyController.getEspecialtyById);
-router.put('/:id', especialtyController.updateEspecialty);
-router.delete('/:id', especialtyController.deleteEspecialty);
+router.get('/:id', specialtyController.getSpecialtyById);
+router.put('/:id', specialtyController.updateSpecialty);
+router.delete('/:id', specialtyController.deleteSpecialty);
 
 export default router;

@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { especialtySchema } from '../schemas/Auth.js';
+import { specialtySchema } from '../schemas/Auth.js';
 
-type EspecialtyInput = z.infer<typeof especialtySchema>;
+type SpecialtyInput = z.infer<typeof specialtySchema>;
 
 const prisma = new PrismaClient();
 
@@ -19,17 +19,15 @@ interface PrismaError extends Error {
   code?: string;
 }
 
-class EspecialtyService {
+class SpecialtyService {
   /**
    * Crear una nueva especialidad
    */
-  async createEspecialty(
-    especialtyData: EspecialtyInput
-  ): Promise<ServiceResult> {
+  async createSpecialty(specialtyData: SpecialtyInput): Promise<ServiceResult> {
     try {
       // Verificar que el departamento existe
       const departmentExists = await prisma.department.findUnique({
-        where: { id: especialtyData.departmentId },
+        where: { id: specialtyData.departmentId },
       });
 
       if (!departmentExists) {
@@ -43,8 +41,8 @@ class EspecialtyService {
       }
 
       // Verificar si ya existe una especialidad con ese nombre
-      const exists = await prisma.especialty.findUnique({
-        where: { name: especialtyData.name },
+      const exists = await prisma.specialty.findUnique({
+        where: { name: specialtyData.name },
       });
 
       if (exists) {
@@ -57,8 +55,8 @@ class EspecialtyService {
         };
       }
 
-      const especialty = await prisma.especialty.create({
-        data: especialtyData,
+      const specialty = await prisma.specialty.create({
+        data: specialtyData,
         include: {
           department: true,
         },
@@ -66,10 +64,10 @@ class EspecialtyService {
 
       return {
         success: true,
-        data: especialty,
+        data: specialty,
       };
     } catch (error) {
-      console.error('[EspecialtyService.create] error:', error);
+      console.error('[SpecialtyService.create] error:', error);
       throw error;
     }
   }
@@ -77,9 +75,9 @@ class EspecialtyService {
   /**
    * Obtener todas las especialidades
    */
-  async getAllEspecialties(): Promise<ServiceResult> {
+  async getAllSpecialties(): Promise<ServiceResult> {
     try {
-      const especialties = await prisma.especialty.findMany({
+      const specialties = await prisma.specialty.findMany({
         include: {
           department: true,
         },
@@ -90,10 +88,10 @@ class EspecialtyService {
 
       return {
         success: true,
-        data: especialties,
+        data: specialties,
       };
     } catch (error) {
-      console.error('[EspecialtyService.getAll] error:', error);
+      console.error('[SpecialtyService.getAll] error:', error);
       throw error;
     }
   }
@@ -101,11 +99,11 @@ class EspecialtyService {
   /**
    * Obtener especialidades por departamento
    */
-  async getEspecialtiesByDepartment(
+  async getSpecialtiesByDepartment(
     departmentId: string
   ): Promise<ServiceResult> {
     try {
-      const especialties = await prisma.especialty.findMany({
+      const specialties = await prisma.specialty.findMany({
         where: { departmentId },
         include: {
           department: true,
@@ -117,10 +115,10 @@ class EspecialtyService {
 
       return {
         success: true,
-        data: especialties,
+        data: specialties,
       };
     } catch (error) {
-      console.error('[EspecialtyService.getByDepartment] error:', error);
+      console.error('[SpecialtyService.getByDepartment] error:', error);
       throw error;
     }
   }
@@ -128,16 +126,16 @@ class EspecialtyService {
   /**
    * Obtener una especialidad por ID
    */
-  async getEspecialtyById(id: string): Promise<ServiceResult> {
+  async getSpecialtyById(id: string): Promise<ServiceResult> {
     try {
-      const especialty = await prisma.especialty.findUnique({
+      const specialty = await prisma.specialty.findUnique({
         where: { id },
         include: {
           department: true,
         },
       });
 
-      if (!especialty) {
+      if (!specialty) {
         return {
           success: false,
           error: {
@@ -149,10 +147,10 @@ class EspecialtyService {
 
       return {
         success: true,
-        data: especialty,
+        data: specialty,
       };
     } catch (error) {
-      console.error('[EspecialtyService.getById] error:', error);
+      console.error('[SpecialtyService.getById] error:', error);
       throw error;
     }
   }
@@ -160,14 +158,14 @@ class EspecialtyService {
   /**
    * Actualizar una especialidad
    */
-  async updateEspecialty(
+  async updateSpecialty(
     id: string,
-    especialtyData: Partial<EspecialtyInput>
+    specialtyData: Partial<SpecialtyInput>
   ): Promise<ServiceResult> {
     try {
-      if (especialtyData.departmentId) {
+      if (specialtyData.departmentId) {
         const departmentExists = await prisma.department.findUnique({
-          where: { id: especialtyData.departmentId },
+          where: { id: specialtyData.departmentId },
         });
 
         if (!departmentExists) {
@@ -181,9 +179,9 @@ class EspecialtyService {
         }
       }
 
-      const especialty = await prisma.especialty.update({
+      const specialty = await prisma.specialty.update({
         where: { id },
-        data: especialtyData,
+        data: specialtyData,
         include: {
           department: true,
         },
@@ -191,10 +189,10 @@ class EspecialtyService {
 
       return {
         success: true,
-        data: especialty,
+        data: specialty,
       };
     } catch (error) {
-      console.error('[EspecialtyService.update] error:', error);
+      console.error('[SpecialtyService.update] error:', error);
       const prismaError = error as PrismaError;
       if (prismaError.code === 'P2025') {
         return {
@@ -212,9 +210,9 @@ class EspecialtyService {
   /**
    * Eliminar una especialidad
    */
-  async deleteEspecialty(id: string): Promise<ServiceResult> {
+  async deleteSpecialty(id: string): Promise<ServiceResult> {
     try {
-      await prisma.especialty.delete({
+      await prisma.specialty.delete({
         where: { id },
       });
 
@@ -223,7 +221,7 @@ class EspecialtyService {
         data: { message: 'Especialidad eliminada exitosamente' },
       };
     } catch (error) {
-      console.error('[EspecialtyService.delete] error:', error);
+      console.error('[SpecialtyService.delete] error:', error);
       const prismaError = error as PrismaError;
       if (prismaError.code === 'P2025') {
         return {
@@ -239,4 +237,4 @@ class EspecialtyService {
   }
 }
 
-export default new EspecialtyService();
+export default new SpecialtyService();

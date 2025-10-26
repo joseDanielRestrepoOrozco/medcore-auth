@@ -23,7 +23,7 @@ const roleEnumSchema = z.enum([
 
 // Schema para datos de médico (embebido)
 export const datosMedicoSchema = z.object({
-  especialtyId: z.string().min(1, { message: 'ID de especialidad requerido' }),
+  specialtyId: z.string().min(1, { message: 'ID de especialidad requerido' }),
   license_number: z.string().min(1, { message: 'Licencia médica requerida' }),
 });
 
@@ -129,11 +129,11 @@ export const departmentSchema = z.object({
   description: z.string().optional(),
 });
 
-export const especialtySchema = z.object({
+export const specialtySchema = z.object({
   name: z.string().min(1, { message: 'Nombre de la especialidad requerido' }),
   description: z.string().optional(),
   departmentId: z.string().min(1, { message: 'ID del departamento requerido' }),
 });
 
 export type Department = z.infer<typeof departmentSchema>;
-export type Especialty = z.infer<typeof especialtySchema>;
+export type Specialty = z.infer<typeof specialtySchema>;

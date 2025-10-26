@@ -63,7 +63,7 @@ class DepartmentService {
     try {
       const departments = await prisma.department.findMany({
         include: {
-          especialties: true,
+          specialties: true,
         },
         orderBy: {
           name: 'asc',
@@ -88,7 +88,7 @@ class DepartmentService {
       const department = await prisma.department.findUnique({
         where: { id },
         include: {
-          especialties: true,
+          specialties: true,
         },
       });
 
@@ -154,7 +154,7 @@ class DepartmentService {
       const department = await prisma.department.findUnique({
         where: { id },
         include: {
-          especialties: true,
+          specialties: true,
         },
       });
 
@@ -168,7 +168,7 @@ class DepartmentService {
         };
       }
 
-      if (department.especialties.length > 0) {
+      if (department.specialties.length > 0) {
         return {
           success: false,
           error: {

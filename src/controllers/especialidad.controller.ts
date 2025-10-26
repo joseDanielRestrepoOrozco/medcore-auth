@@ -1,18 +1,18 @@
 import { type NextFunction, type Request, type Response } from 'express';
-import { especialtySchema } from '../schemas/Auth.js';
-import especialtyService from '../services/especialidad.service.js';
+import { specialtySchema } from '../schemas/Auth.js';
+import specialtyService from '../services/especialidad.service.js';
 
 /**
  * Crear una nueva especialidad
  */
-const createEspecialty = async (
+const createSpecialty = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const especialtyData = especialtySchema.parse(req.body);
-    const result = await especialtyService.createEspecialty(especialtyData);
+    const specialtyData = specialtySchema.parse(req.body);
+    const result = await specialtyService.createSpecialty(specialtyData);
 
     if (!result.success) {
       res.status(result.error!.status).json({ error: result.error!.message });
@@ -21,7 +21,7 @@ const createEspecialty = async (
 
     res.status(201).json(result.data);
   } catch (error: unknown) {
-    console.error('[createEspecialty] error', error);
+    console.error('[createSpecialty] error', error);
     next(error);
   }
 };
@@ -29,13 +29,13 @@ const createEspecialty = async (
 /**
  * Obtener todas las especialidades
  */
-const getAllEspecialties = async (
+const getAllSpecialties = async (
   _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const result = await especialtyService.getAllEspecialties();
+    const result = await specialtyService.getAllSpecialties();
 
     if (!result.success) {
       res.status(result.error!.status).json({ error: result.error!.message });
@@ -44,7 +44,7 @@ const getAllEspecialties = async (
 
     res.status(200).json(result.data);
   } catch (error: unknown) {
-    console.error('[getAllEspecialties] error', error);
+    console.error('[getAllSpecialties] error', error);
     next(error);
   }
 };
@@ -52,14 +52,14 @@ const getAllEspecialties = async (
 /**
  * Obtener especialidades por departamento
  */
-const getEspecialtiesByDepartment = async (
+const getSpecialtiesByDepartment = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { departmentId } = req.params;
-    const result = await especialtyService.getEspecialtiesByDepartment(
+    const result = await specialtyService.getSpecialtiesByDepartment(
       departmentId!
     );
 
@@ -70,7 +70,7 @@ const getEspecialtiesByDepartment = async (
 
     res.status(200).json(result.data);
   } catch (error: unknown) {
-    console.error('[getEspecialtiesByDepartment] error', error);
+    console.error('[getSpecialtiesByDepartment] error', error);
     next(error);
   }
 };
@@ -78,14 +78,14 @@ const getEspecialtiesByDepartment = async (
 /**
  * Obtener una especialidad por ID
  */
-const getEspecialtyById = async (
+const getSpecialtyById = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const result = await especialtyService.getEspecialtyById(id!);
+    const result = await specialtyService.getSpecialtyById(id!);
 
     if (!result.success) {
       res.status(result.error!.status).json({ error: result.error!.message });
@@ -94,7 +94,7 @@ const getEspecialtyById = async (
 
     res.status(200).json(result.data);
   } catch (error: unknown) {
-    console.error('[getEspecialtyById] error', error);
+    console.error('[getSpecialtyById] error', error);
     next(error);
   }
 };
@@ -102,18 +102,15 @@ const getEspecialtyById = async (
 /**
  * Actualizar una especialidad
  */
-const updateEspecialty = async (
+const updateSpecialty = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const especialtyData = especialtySchema.partial().parse(req.body);
-    const result = await especialtyService.updateEspecialty(
-      id!,
-      especialtyData
-    );
+    const specialtyData = specialtySchema.partial().parse(req.body);
+    const result = await specialtyService.updateSpecialty(id!, specialtyData);
 
     if (!result.success) {
       res.status(result.error!.status).json({ error: result.error!.message });
@@ -122,7 +119,7 @@ const updateEspecialty = async (
 
     res.status(200).json(result.data);
   } catch (error: unknown) {
-    console.error('[updateEspecialty] error', error);
+    console.error('[updateSpecialty] error', error);
     next(error);
   }
 };
@@ -130,14 +127,14 @@ const updateEspecialty = async (
 /**
  * Eliminar una especialidad
  */
-const deleteEspecialty = async (
+const deleteSpecialty = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const result = await especialtyService.deleteEspecialty(id!);
+    const result = await specialtyService.deleteSpecialty(id!);
 
     if (!result.success) {
       res.status(result.error!.status).json({ error: result.error!.message });
@@ -146,16 +143,16 @@ const deleteEspecialty = async (
 
     res.status(200).json(result.data);
   } catch (error: unknown) {
-    console.error('[deleteEspecialty] error', error);
+    console.error('[deleteSpecialty] error', error);
     next(error);
   }
 };
 
 export default {
-  createEspecialty,
-  getAllEspecialties,
-  getEspecialtiesByDepartment,
-  getEspecialtyById,
-  updateEspecialty,
-  deleteEspecialty,
+  createSpecialty,
+  getAllSpecialties,
+  getSpecialtiesByDepartment,
+  getSpecialtyById,
+  updateSpecialty,
+  deleteSpecialty,
 };
