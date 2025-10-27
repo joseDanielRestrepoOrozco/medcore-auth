@@ -137,7 +137,6 @@ class AuthService {
             data: {
               ...baseFields,
               paciente: {
-                gender: userData.paciente.gender,
                 address: userData.paciente.address,
               },
             },
@@ -228,7 +227,7 @@ class AuthService {
           success: false,
           error: {
             status: 401,
-            message: 'Email no verificado. Revisa tu correo.',
+            message: 'Email pendiente o inactivo. Verifique su cuenta.',
           },
         };
       }

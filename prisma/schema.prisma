@@ -64,7 +64,6 @@ type DatosEnfermera {
 
 // Tipo compuesto para datos específicos de Pacientes (opcional, para futuras expansiones)
 type DatosPaciente {
-  gender  String
   address String?
 }
 
