@@ -10,18 +10,23 @@ interface MailResult {
 // Normalize password (Gmail App Passwords must not contain spaces)
 const normalizedPass = (SMTP_PASS || '').replace(/\s+/g, '');
 
+// Parse port number
+const smtpPort = SMTP_PORT ? parseInt(SMTP_PORT, 10) : 465;
+const isSecure = smtpPort === 465;
+const requireTLS = smtpPort === 587;
+
 // Prefer explicit host/port if provided; fallback to Gmail service
 const transporter: Transporter = nodemailer.createTransport(
-  SMTP_HOST && SMTP_PORT  
+  SMTP_HOST && SMTP_PORT
     ? {
         host: SMTP_HOST,
-        port: parseInt(SMTP_PORT, 10),
-        secure: parseInt(SMTP_PORT, 10) === 465, // true for 465, false for other ports
+        port: smtpPort,
+        secure: isSecure, // true for 465, false for other ports
         auth: {
           user: SMTP_USER,
           pass: normalizedPass,
         },
-        ...(parseInt(SMTP_PORT, 10) === 587 && { requireTLS: true }),
+        ...(requireTLS && { requireTLS: true }),
       }
     : {
         service: 'gmail',

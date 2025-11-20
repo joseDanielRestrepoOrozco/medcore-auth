@@ -1,6 +1,6 @@
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 
 const errorHandler = (
   error: unknown,
@@ -8,7 +8,8 @@ const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
-  if (error instanceof PrismaClientKnownRequestError) {
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2023') {
       res.status(400).json({ error: 'ID no válido' });
       return;
