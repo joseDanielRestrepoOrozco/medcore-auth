@@ -23,6 +23,6 @@
     "skipLibCheck": true,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*", "test"],
   "exclude": ["node_modules", "dist"]
 }

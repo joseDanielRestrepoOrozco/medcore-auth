@@ -7,7 +7,28 @@ services:
     image: medcore-auth
     environment:
       - PORT=3000
+      - SECRET=DOTTED5
+      - SMTP_HOST=localhost
+      - SMTP_PORT=1025
+      - SMTP_SECURE=false
+      - SMTP_USER=
+      - SMTP_PASS=
+      - SMTP_SERVICE=
+      - EMAIL_ENABLED=
+      - DATABASE_URL=
+      - FRONTEND_ORIGIN=
+      - TEST_EMAIL=
+      - MAILHOG_URL=
+      - NODE_ENV=
     ports:
       - '3001:3000'
     env_file:
       - .env
+  mailhog:
+    container_name: docker_mailhog
+    image: mailhog/mailhog:latest
+    logging:
+      driver: none # disable saving logs
+    ports:
+      - '1025:1025' # smtp server
+      - '8025:8025' # web ui

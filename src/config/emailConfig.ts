@@ -16,26 +16,17 @@ const isSecure = smtpPort === 465;
 const requireTLS = smtpPort === 587;
 
 // Prefer explicit host/port if provided; fallback to Gmail service
-const transporter: Transporter = nodemailer.createTransport(
-  SMTP_HOST && SMTP_PORT
-    ? {
-        host: SMTP_HOST,
-        port: smtpPort,
-        secure: isSecure, // true for 465, false for other ports
-        auth: {
-          user: SMTP_USER,
-          pass: normalizedPass,
-        },
-        ...(requireTLS && { requireTLS: true }),
-      }
-    : {
-        service: 'gmail',
-        auth: {
-          user: SMTP_USER,
-          pass: normalizedPass,
-        },
-      }
-);
+const transporter: Transporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: smtpPort,
+  secure: isSecure,
+  requireTLS,
+
+  auth: {
+    user: SMTP_USER,
+    pass: normalizedPass,
+  },
+});
 
 let transporterVerified = false;
 
@@ -51,6 +42,8 @@ const sendVerificationEmail = async (
 ): Promise<MailResult> => {
   // verificar credenciales
   try {
+    console.log(SMTP_HOST, SMTP_PORT, SMTP_USER, '****');
+
     if (!transporterVerified) {
       await transporter.verify();
       transporterVerified = true;
